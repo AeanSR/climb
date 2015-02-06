@@ -8,7 +8,7 @@
 
 /** Settings. */
 #define SIMC_NAME "simc64.exe"
-const int amount = 4653;
+const int amount = 3574 - 1844;
 const char* stat_name[] = {
 	"crit",
 	"mastery",
@@ -36,7 +36,7 @@ struct point_t{
 			stat[direct2] -= interval;
 		} else return 0;
 		for (int i = 0; i < stat_count; i++){
-			if (stat[i] < 0) return 0;
+			if (stat[i] <= 0) return 0;
 		}
 		return 1;
 	}
@@ -157,7 +157,7 @@ const simresult_t& sim(simresult_t& r, double target_error){
 
 #define lprintf(...) do{ printf(__VA_ARGS__); fprintf(log, __VA_ARGS__); fflush(log); } while(0)
 
-int main(){
+void descent(){
 	FILE* log = fopen("log.txt", "wb");
 	for (int i = 0; i < stat_count; i++){
 		for (int j = 0; j < amount; j++){
@@ -231,4 +231,32 @@ int main(){
 		} while (found); 
 		interval = static_cast<int>(interval * 0.618);
 	}
+}
+
+void plot(){
+	FILE* log = fopen("plot.txt", "wb");
+	point_t p, q;
+	p.stat[0] = 0;
+	p.stat[1] = 0;
+	p.stat[2] = amount;
+	simresult_t res = sim(p);
+	const int interval = 50;
+	for (p.stat[0] = interval; p.stat[0] <= amount; p.stat[0] += interval){
+		for (p.stat[1] = interval; p.stat[1] <= amount; p.stat[1] += interval){
+			p.stat[2] = amount - p.stat[1] - p.stat[0];
+			if (p.stat[2] > amount || p.stat[2] <= 0) continue;
+			if (p.stat[0] < 550 || (p.stat[0] == 550 && p.stat[1] <= 900)) continue;
+			res = sim(p);
+			while (res.error * 2 > 5.0){
+				res = sim(res, 5.0);
+				if (res.iter > 400000) break;
+			}
+			lprintf("%d, %d, %.3lf, %.3lf\r\n", p.stat[0], p.stat[1], res.dps, res.error);
+		}
+	}
+}
+
+int main(){
+	descent();
+	// plot();
 }
